@@ -6,15 +6,24 @@ export default async function sitemap() {
     const locales = routing.locales;
     const includeLocalePrefix = locales.length > 1;
 
+    const getPostsOrEmpty = (parts) => {
+        try {
+            return getPosts(parts);
+        } catch (e) {
+            console.warn(`Skipping posts in ${parts.join('/')} - ${e.message}`);
+            return [];
+        }
+    };
+
     let blogs = locales.flatMap((locale) => 
-        getPosts(['src', 'app', '[locale]', 'blog', 'posts', locale]).map((post) => ({
+        getPostsOrEmpty(['src', 'app', locale, 'blog', 'posts', locale]).map((post) => ({
             url: `${baseURL}${includeLocalePrefix ? `/${locale}` : ''}/blog/${post.slug}`,
             lastModified: post.metadata.publishedAt,
         }))
     );
 
     let works = locales.flatMap((locale) => 
-        getPosts(['src', 'app', '[locale]', 'work', 'projects', locale]).map((post) => ({
+        getPostsOrEmpty(['src', 'app', locale, 'work', 'projects', locale]).map((post) => ({
             url: `${baseURL}${includeLocalePrefix ? `/${locale}` : ''}/work/${post.slug}`,
             lastModified: post.metadata.publishedAt,
         }))
@@ -22,12 +31,12 @@ export default async function sitemap() {
 
     const activeRoutes = Object.keys(routesConfig).filter((route) => routesConfig[route]);
 
-    let routes = locales.flatMap((locale)=> 
+    let routes = locales.flatMap((locale) => 
         activeRoutes.map((route) => ({
             url: `${baseURL}${includeLocalePrefix ? `/${locale}` : ''}${route !== '/' ? route : ''}`,
             lastModified: new Date().toISOString().split('T')[0],
         }))
     );
 
-    return [...routes, ...blogs, ...works]
+    return [...routes, ...blogs, ...works];
 }
